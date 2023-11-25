@@ -87,7 +87,6 @@ namespace DotNetLab7
         public Gender Gender { get; set; }
         public bool Active { get; set; }
         public int DepartmentId { get; set; }
-
         public List<int> TopicsIds { get; set; }
         public Student(int id, int index, string name, Gender gender, bool active,
             int departmentId, List<int> topicsIds)
@@ -215,18 +214,14 @@ namespace DotNetLab7
         // Could write query for it 
         public static List<Topic> GenerateTopics()
         {
-            return new List<Topic>() {
-                new Topic(1, "Basic"),
-                new Topic(2, "C++"),
-                new Topic(3, "fuzzy logic"),
-                new Topic(4, "JavaScript"),
-                new Topic(5, "neural networks"),
-                new Topic(6, "web programming"),
-                new Topic(7, "algorithms"),
-                new Topic(8, "Java"),
-                new Topic(9, "C#"), 
-                new Topic(10, "PHP")
-            };
+
+            List<Topic> topics =
+                GenerateStudentsWithTopicsEasy()
+                .SelectMany(s => s.Topics)
+                .Distinct()
+                .Select((t, i) => new Topic(i, t)).ToList();
+
+            return topics;
         }
 
     }
@@ -236,12 +231,16 @@ namespace DotNetLab7
         {
             Console.WriteLine("--------- 1 ------------");
             ShowGroupsOfN();
+             
             Console.WriteLine("--------- 2 ------------");
             showSortTopicsByPopularity();
+
             Console.WriteLine("--------- 3 ------------");
             ShowConvertedStudents();
+
             Console.WriteLine("--------- 4 ------------");
             DemonstrateReflection();
+            /**/ 
 
         }
 
@@ -263,23 +262,18 @@ namespace DotNetLab7
             }
         }
 
-        // Make it lambda
-        static int GroupNumber((StudentWithTopics s, int num) t, int n)
-        {
-            return t.num / n;
-        }
-
-        // IEnumerable<IGrouping<int, StudentWithTopics>>
         public static IEnumerable<(int GroupNum, IGrouping<int, StudentWithTopics> Students)> CreateGroupsOfN(int n)
         {
             int i = 0;
+
+            Func<(StudentWithTopics s, int num), int> GroupNumber = ((StudentWithTopics s, int num) t) => t.num / n;
 
             IEnumerable<(int, IGrouping<int, StudentWithTopics>)> group = from s in
                 (from s in Generator.GenerateStudentsWithTopicsEasy()
                  orderby s.Name, s.Index
                  select s)
                         let num = i++
-                        let groupNum = Program.GroupNumber((s, num), n)
+                        let groupNum = GroupNumber((s, num))
                         group s by groupNum into sGroup
                         select ( 
                             groupNum : sGroup.Key,
@@ -317,7 +311,7 @@ namespace DotNetLab7
                 .ThenBy(x => x)   // alphabetically ?
                 .Select(x => x.Key);
                 
-            /* 
+            /*  
             var withCounts = Generator.GenerateStudentsWithTopicsEasy()
                 .SelectMany(s => s.Topics)
                 .GroupBy(t => t)
@@ -338,23 +332,23 @@ namespace DotNetLab7
             IEnumerable<(Gender Gender, IEnumerable<string> Topics)> topics = Generator.GenerateStudentsWithTopicsEasy2()
                 .GroupBy(s => s.Gender)
                 .Select(group => (Gender: group.Key, 
-                Topics: group.SelectMany(s => s.Topics)
-                    .GroupBy(t => t)
-                    .Select(group => (Key: group.Key, Count: group.Count()))
-                    .OrderBy(x => x.Count)
-                    .ThenBy(x => x)   // alphabetically ?
-                    .Select(x => x.Key))
+                                Topics: group.SelectMany(s => s.Topics)
+                                    .GroupBy(t => t)
+                                    .Select(group => (Key: group.Key, Count: group.Count()))
+                                    .OrderBy(x => x.Count)
+                                    .ThenBy(x => x)   // alphabetically ?
+                                    .Select(x => x.Key))
                 );
 
             /* 
             var topicsWithCounts = Generator.GenerateStudentsWithTopicsEasy2()
                 .GroupBy(s => s.Gender)
                 .Select(group => (Gender: group.Key,
-                Topics: group.SelectMany(s => s.Topics)
-                    .GroupBy(t => t)
-                    .Select(group => (Key: group.Key, Count: group.Count()))
-                    .OrderBy(x => x.Count)
-                    .ThenBy(x => x))
+                            Topics: group.SelectMany(s => s.Topics)
+                                .GroupBy(t => t)
+                                .Select(group => (Key: group.Key, Count: group.Count()))
+                                .OrderBy(x => x.Count)
+                                .ThenBy(x => x))
                 );
 
             foreach (var group in topicsWithCounts)
@@ -362,7 +356,7 @@ namespace DotNetLab7
                 Console.WriteLine(group.Gender + ": ");
                 group.Topics.ToList().ForEach(x => Console.Write(x + ";"));
                 Console.WriteLine();
-            }*/
+            } */
 
             return topics;
         }
@@ -372,8 +366,10 @@ namespace DotNetLab7
             var topics = Generator.GenerateTopics();
             foreach ( var topic in topics )
             {
-                Console.Write(topic + ";");
+                Console.Write(topic.Id + ", " + topic.Title + ";");
             }
+            Console.WriteLine();
+
             IEnumerable<StudentWithTopics> studentsBefore = Generator.GenerateStudentsWithTopicsEasy().OrderBy(s => s.Index);
             IEnumerable<Student> studentsAfter = ConvertStudentWithTopicsToStudent().OrderBy(s => s.Index);
             
@@ -405,7 +401,7 @@ namespace DotNetLab7
 
         public static void DemonstrateReflection()
         {
-            List<String> strings = new List<String>() { "Uno", "Cuatro", "Dos", "Tres", "Cinco", "Dos" };
+            object strings = new List<String>() { "Uno", "Cuatro", "Dos", "Tres", "Cinco", "Dos" };
 
             MethodInfo info = strings.GetType().GetMethod("IndexOf", 
                 new Type[] {typeof(String), typeof(int), typeof(int)});
@@ -417,7 +413,7 @@ namespace DotNetLab7
             }
 
             string arg = "Dos";
-            int index = (int)info.Invoke(strings, new object[] { arg, 1, 3 });
+            object index = info.Invoke(strings, new object[] { arg, 1, 3 });
             Console.WriteLine($"Index of {arg} = " + index);
 
         }
