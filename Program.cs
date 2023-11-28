@@ -311,7 +311,7 @@ namespace DotNetLab7
                 .ThenBy(x => x)   // alphabetically ?
                 .Select(x => x.Key);
                 
-            /*  
+            /*
             var withCounts = Generator.GenerateStudentsWithTopicsEasy()
                 .SelectMany(s => s.Topics)
                 .GroupBy(t => t)
@@ -340,7 +340,7 @@ namespace DotNetLab7
                                     .Select(x => x.Key))
                 );
 
-            /* 
+            /*
             var topicsWithCounts = Generator.GenerateStudentsWithTopicsEasy2()
                 .GroupBy(s => s.Gender)
                 .Select(group => (Gender: group.Key,
@@ -351,12 +351,13 @@ namespace DotNetLab7
                                 .ThenBy(x => x))
                 );
 
+            
             foreach (var group in topicsWithCounts)
             {
                 Console.WriteLine(group.Gender + ": ");
                 group.Topics.ToList().ForEach(x => Console.Write(x + ";"));
                 Console.WriteLine();
-            } */
+            }   */
 
             return topics;
         }
@@ -391,7 +392,7 @@ namespace DotNetLab7
                 Join(Generator.GenerateTopics(), 
                         topicName => topicName, 
                         topic => topic.Title, 
-                        (topicName, topic) => 
+                        (_, topic) => 
                             topic.Id
                     ).ToList()
             ));
